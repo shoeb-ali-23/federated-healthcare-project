@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy-Preserving Federated Smart Healthcare</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        slate: { 850: '#151e2e', 950: '#070b13' },
+                        teal: { 450: '#14b8a6', 550: '#0d9488' }
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased selection:bg-teal-500 selection:text-white">
+
+    <!-- Top Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/90 backdrop-blur sticky top-0 z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="flex items-center space-x-3">
+                <div class="h-10 w-10 rounded-xl bg-gradient-to-tr from-teal-500 to-indigo-600 flex items-center justify-center shadow-lg shadow-teal-500/20">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-tight bg-gradient-to-r from-teal-400 via-sky-300 to-indigo-400 bg-clip-text text-transparent">
+                        Federated Smart Healthcare Architecture
+                    </h1>
+                    <p class="text-xs text-slate-400">
+                        Reference: GH Raisoni College of Engineering • Privacy-Preserving Multi-Agent System (Modules 1-6)
+                    </p>
+                </div>
+            </div>
+
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-lg border border-slate-700 text-xs">
+                    <span id="backendStatusDot" class="h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <span id="backendStatusText" class="text-slate-300 font-medium">Connecting...</span>
+                </div>
+                <div class="bg-indigo-950/60 border border-indigo-700/50 px-3 py-1.5 rounded-lg text-xs font-mono text-indigo-300">
+                    Round: <span id="headerRoundNum" class="font-bold text-white">0</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 py-6 space-y-6">
+        
+        <!-- Federated Controls Panel -->
+        <section class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                <!-- Training Triggers -->
+                <div class="flex flex-wrap items-center gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-400 mb-1">Rounds per Step</label>
+                        <input id="inputRounds" type="number" min="1" max="20" value="1" 
+                               class="w-24 bg-slate-800 border border-slate-700 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-teal-500 font-mono">
+                    </div>
+
+                    <div class="pt-5 flex gap-2">
+                        <button id="btnRunRound" class="bg-gradient-to-r from-teal-500 to-teal-600 hover:from-teal-600 hover:to-teal-700 text-white font-medium text-sm px-5 py-2.5 rounded-lg shadow-lg shadow-teal-500/20 transition flex items-center gap-2 disabled:opacity-50">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Run Next Round
+                        </button>
+
+                        <button id="btnReset" class="bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white border border-slate-700 font-medium text-sm px-4 py-2.5 rounded-lg transition flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                            Reset
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Module 6 Privacy Controls -->
+                <div class="flex flex-wrap items-center gap-6 bg-slate-950/70 p-4 rounded-xl border border-slate-800/80">
+                    <!-- DP Toggle -->
+                    <div class="flex items-center space-x-3">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleDP" class="sr-only peer">
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-500"></div>
+                        </label>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Differential Privacy (DP)</span>
+                            <span class="text-[11px] text-slate-400">Laplace Noise Addition</span>
+                        </div>
+                    </div>
+
+                    <!-- Epsilon Slider -->
+                    <div class="w-44">
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-slate-400">Epsilon (&epsilon;)</span>
+                            <span id="epsilonVal" class="font-mono text-teal-400 font-bold">1.00</span>
+                        </div>
+                        <input id="sliderEpsilon" type="range" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full accent-teal-500 cursor-pointer">
+                    </div>
+
+                    <!-- Secure Aggregation Toggle -->
+                    <div class="flex items-center space-x-3 pl-2 border-l border-slate-800">
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="toggleSecAgg" class="sr-only peer" checked>
+                            <div class="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-indigo-500"></div>
+                        </label>
+                        <div>
+                            <span class="text-xs font-semibold text-slate-200 block">Secure Aggregation</span>
+                            <span class="text-[11px] text-slate-400">Pairwise Mask Blinding</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Module 3: Autonomous Hospital Agent Grid -->
+        <section>
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="text-sm font-semibold tracking-wider uppercase text-slate-400 flex items-center gap-2">
+                    <span class="h-2 w-2 rounded-full bg-teal-400"></span>
+                    Autonomous Hospital Agents (Non-IID Partitions)
+                </h2>
+                <span class="text-xs text-slate-500">Zero Patient Data Transmission • Raw Records Confined On-Agent</span>
+            </div>
+            
+            <div id="agentGrid" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Agent cards rendered dynamically -->
+                <div class="animate-pulse bg-slate-900 border border-slate-800 rounded-xl p-5 h-44"></div>
+                <div class="animate-pulse bg-slate-900 border border-slate-800 rounded-xl p-5 h-44"></div>
+                <div class="animate-pulse bg-slate-900 border border-slate-800 rounded-xl p-5 h-44"></div>
+            </div>
+        </section>
+
+        <!-- Real-Time Metrics & Training Curves -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <span class="h-2.5 w-2.5 rounded-full bg-emerald-400"></span>
+                        Global Model Accuracy vs Communication Round
+                    </h3>
+                    <span id="statAcc" class="text-xs font-mono font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-800/50 px-2 py-0.5 rounded">0.00%</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="accuracyChart"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-sm font-semibold text-slate-300 flex items-center gap-2">
+                        <span class="h-2.5 w-2.5 rounded-full bg-amber-400"></span>
+                        Global Log Loss (Binary Cross-Entropy)
+                    </h3>
+                    <span id="statLoss" class="text-xs font-mono font-bold text-amber-400 bg-amber-950/60 border border-amber-800/50 px-2 py-0.5 rounded">0.0000</span>
+                </div>
+                <div class="relative h-64 w-full">
+                    <canvas id="lossChart"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- System Activity Console & Live Clinical Inference -->
+        <section class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            
+            <!-- Terminal-style Activity Logs -->
+            <div class="lg:col-span-5 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-3">
+                    <div class="flex items-center space-x-2">
+                        <span class="h-3 w-3 rounded-full bg-rose-500/80"></span>
+                        <span class="h-3 w-3 rounded-full bg-amber-500/80"></span>
+                        <span class="h-3 w-3 rounded-full bg-emerald-500/80"></span>
+                        <span class="text-xs font-mono text-slate-400 pl-2">federated_events.log</span>
+                    </div>
+                    <button id="btnClearLogs" class="text-[11px] text-slate-400 hover:text-white transition">Clear</button>
+                </div>
+                <div id="logConsole" class="font-mono text-[11px] text-slate-300 space-y-1.5 h-80 overflow-y-auto p-2 bg-slate-950/80 rounded-lg border border-slate-800/60 leading-relaxed">
+                    <div class="text-slate-500">[SYSTEM] Awaiting federated communication round dispatch...</div>
+                </div>
+            </div>
+
+            <!-- Patient Clinical Predictor (Global Model Inference) -->
+            <div class="lg:col-span-7 bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-xl flex flex-col">
+                <div class="flex items-center justify-between mb-4 border-b border-slate-800 pb-3">
+                    <div>
+                        <h3 class="text-sm font-semibold text-slate-200">Patient Clinical Predictor</h3>
+                        <p class="text-xs text-slate-400">Evaluate patient heart disease probability using current FedAvg global weights</p>
+                    </div>
+                    <button id="btnPrefillSample" class="text-xs bg-slate-800 hover:bg-slate-700 text-teal-300 border border-slate-700 px-3 py-1.5 rounded-lg transition">
+                        Load Sample Profile
+                    </button>
+                </div>
+
+                <form id="predictionForm" class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">Age (years)</label>
+                        <input id="inputAge" type="number" step="1" value="58" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Sex</label>
+                        <select id="inputSex" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="1">1 (Male)</option>
+                            <option value="0">0 (Female)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Chest Pain (CP)</label>
+                        <select id="inputCp" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0">0: Typical Angina</option>
+                            <option value="1">1: Atypical Angina</option>
+                            <option value="2">2: Non-anginal</option>
+                            <option value="3" selected>3: Asymptomatic</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Resting BP (mm Hg)</label>
+                        <input id="inputTrestbps" type="number" value="140" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Serum Chol (mg/dl)</label>
+                        <input id="inputChol" type="number" value="260" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Fasting Blood Sugar</label>
+                        <select id="inputFbs" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0">0 (&le; 120 mg/dl)</option>
+                            <option value="1" selected>1 (&gt; 120 mg/dl)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Rest ECG (0-2)</label>
+                        <select id="inputRestecg" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0" selected>0: Normal</option>
+                            <option value="1">1: ST-T Abnormality</option>
+                            <option value="2">2: LV Hypertrophy</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Max HR (Thalach)</label>
+                        <input id="inputThalach" type="number" value="130" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Exercise Angina</label>
+                        <select id="inputExang" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0">0 (No)</option>
+                            <option value="1" selected>1 (Yes)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Oldpeak (ST Dep)</label>
+                        <input id="inputOldpeak" type="number" step="0.1" value="2.2" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Slope (0-2)</label>
+                        <select id="inputSlope" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0">0: Upsloping</option>
+                            <option value="1" selected>1: Flat</option>
+                            <option value="2">2: Downsloping</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">CA (# Vessels 0-3)</label>
+                        <input id="inputCa" type="number" min="0" max="3" value="1" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">Thal Test (0-2)</label>
+                        <select id="inputThal" class="w-full bg-slate-800 border border-slate-700 rounded p-1.5 text-white">
+                            <option value="0">0: Normal</option>
+                            <option value="1">1: Fixed Defect</option>
+                            <option value="2" selected>2: Reversible Defect</option>
+                        </select>
+                    </div>
+                    <div class="col-span-2 sm:col-span-3 flex items-end">
+                        <button type="submit" id="btnPredict" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg transition shadow-md shadow-indigo-600/30 flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            Test with Global Model
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Prediction Results Display -->
+                <div id="predictionResult" class="mt-4 p-4 rounded-xl bg-slate-950 border border-slate-800 hidden">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <span class="text-xs uppercase tracking-wider text-slate-400 block font-semibold">Diagnosis Result</span>
+                            <span id="resRiskBadge" class="inline-block mt-1 text-sm font-bold px-3 py-1 rounded-full bg-rose-950 text-rose-300 border border-rose-800">
+                                High Risk
+                            </span>
+                        </div>
+                        <div class="text-right">
+                            <span class="text-xs text-slate-400 block">Disease Probability</span>
+                            <span id="resProb" class="text-2xl font-mono font-bold text-rose-400">78.5%</span>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-800/80 text-[11px] text-slate-400 flex justify-between">
+                        <span>Evaluated using Global Model Round: <b id="resRound" class="text-slate-200">0</b></span>
+                        <span id="resPrivacyNotice" class="text-teal-400 font-medium">Aggregated via Zero-Knowledge FedAvg</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- App Logic Scripts -->
+    <script src="config.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
